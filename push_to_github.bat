@@ -2,31 +2,30 @@
 setlocal
 cd /d "%~dp0"
 echo ========================================================
-echo   Push DER-02_FINAL to GitHub (Geethapriyan-R)
+echo   Pushing DER-02_FINAL to:
+echo   https://github.com/Geethapriyan-R/DER-02-Industrial-Threat-Zone-Estimation
 echo ========================================================
 echo.
 
-set /p REPO_URL="Enter your GitHub repository URL (e.g., https://github.com/Geethapriyan-R/DER-02.git): "
-if "%REPO_URL%"=="" (
-    echo No URL entered. Exiting.
-    pause
-    exit /b
-)
-
-git remote remove origin 2>nul
-git remote add origin %REPO_URL%
 git branch -M main
-echo.
-echo Pushing to %REPO_URL%...
-git push -u origin main
+git remote remove origin 2>nul
+git remote add origin https://github.com/Geethapriyan-R/DER-02-Industrial-Threat-Zone-Estimation.git
+
+echo Uploading commits...
+git push -u origin main --force
 
 if %errorlevel% equ 0 (
     echo.
     echo ========================================================
-    echo   SUCCESSFULLY PUSHED TO GITHUB!
+    echo   SUCCESSFULLY UPDATED YOUR GITHUB REPOSITORY!
+    echo   Check it live at:
+    echo   https://github.com/Geethapriyan-R/DER-02-Industrial-Threat-Zone-Estimation
     echo ========================================================
 ) else (
     echo.
-    echo PUSH FAILED. Please verify your repository URL and GitHub credentials.
+    echo --------------------------------------------------------
+    echo If GitHub asked to Sign In, please complete the browser
+    echo login prompt to authorize the upload.
+    echo --------------------------------------------------------
 )
 pause
