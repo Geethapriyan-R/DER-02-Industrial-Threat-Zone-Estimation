@@ -1,0 +1,3668 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>DER-02: Threat-Zone Estimation (Approach 2 · CompactUI)</title>
+    <meta name="description"
+        content="DER-02 Industrial Threat-Zone Estimation with CompactSlider UI, API 521 point-source thermal radiation, and Kingery-Bulmash blast overpressure.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- External CSS -->
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+
+/* ==========================================================================
+   CYBER-INDUSTRIAL DARK DESIGN TOKENS
+   ========================================================================== */
+:root {
+    --bg-primary: #060913;
+    --bg-secondary: #0b1120;
+    --card-bg: rgba(15, 23, 42, 0.75);
+    --card-bg-solid: #0f172a;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-border-hover: rgba(0, 240, 255, 0.35);
+
+    /* Apple / Cyber-Industrial Glow Accents */
+    --accent-cyan: #00f0ff;
+    --accent-cyan-glow: rgba(0, 240, 255, 0.35);
+    --accent-red: #ff3366;
+    --accent-orange: #ff9900;
+    --accent-yellow: #ffcc00;
+    --accent-green: #00ff88;
+    --accent-purple: #a855f7;
+    --accent-blue: #38bdf8;
+
+    /* Text Colors */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background-color: var(--bg-primary);
+    background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-cyan);
+}
+
+/* ==========================================================================
+   HEADER BAR
+   ========================================================================== */
+.tactical-header {
+    background: rgba(11, 17, 32, 0.85);
+    border-bottom: 1px solid var(--card-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    gap: 16px;
+}
+
+.brand-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon-shield {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(168, 85, 247, 0.15));
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.brand-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-title .badge-tag {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    letter-spacing: 0.05em;
+}
+
+.brand-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+}
+
+.header-status-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-pill.live {
+    background: rgba(0, 255, 136, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.status-pill.live::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+}
+
+.status-pill.model {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent-blue);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.btn-header-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(255, 51, 102, 0.15);
+    border: 1px solid rgba(255, 51, 102, 0.35);
+    color: #ff6688;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-header-action:hover {
+    background: rgba(255, 51, 102, 0.3);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   APP LAYOUT (3 Columns)
+   ========================================================================== */
+.app-container {
+    display: grid;
+    grid-template-columns: 360px 1fr 340px;
+    gap: 16px;
+    padding: 16px 24px 24px;
+    flex: 1;
+    max-width: 1920px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+@media (max-width: 1280px) {
+    .app-container {
+        grid-template-columns: 340px 1fr;
+    }
+    .right-telemetry-col {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 900px) {
+    .app-container {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+    .right-telemetry-col {
+        grid-column: span 1;
+    }
+}
+
+/* Card Deck Panel */
+.deck-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.deck-panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.deck-panel-title {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.deck-panel-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+}
+
+/* ==========================================================================
+   FACILITY PRESET SELECTOR
+   ========================================================================== */
+.preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.preset-card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-card:hover {
+    border-color: rgba(0, 240, 255, 0.4);
+    background: rgba(30, 41, 59, 0.8);
+}
+
+.preset-card.active {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 240, 255, 0.1);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+.preset-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.preset-card-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+.section-divider {
+    height: 1px;
+    background: var(--card-border);
+    margin: 4px 0;
+}
+
+.section-label-group {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+/* ==========================================================================
+   COMPACT SLIDER SUITE
+   ========================================================================== */
+.compact-slider-wrapper {
+    width: 100%;
+}
+
+.compact-slider-card {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+}
+
+.compact-slider-card:hover {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.compact-slider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.compact-slider-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.compact-slider-icon {
+    font-size: 14px;
+}
+
+.compact-slider-readout {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.compact-slider-value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.compact-slider-unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.compact-slider-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Stepper Buttons */
+.compact-stepper-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.compact-stepper-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: var(--accent-cyan);
+}
+
+.compact-stepper-btn:active {
+    transform: scale(0.92);
+}
+
+/* Linear Track */
+.compact-track-container {
+    position: relative;
+    height: 20px;
+    flex: 1;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+}
+
+.compact-track-container:focus {
+    outline: none;
+}
+
+.compact-track-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+}
+
+.compact-track-fill {
+    position: absolute;
+    left: 0;
+    height: 8px;
+    width: 0%;
+    border-radius: 4px;
+    pointer-events: none;
+    transition: width 0.05s ease-out;
+}
+
+/* Variant Gradients */
+.variant-danger .compact-track-fill {
+    background: linear-gradient(90deg, #ff4466, #ff0055);
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+}
+.variant-danger .compact-slider-value { color: #ff6688; }
+
+.variant-warning .compact-track-fill {
+    background: linear-gradient(90deg, #ffaa00, #ff7700);
+    box-shadow: 0 0 10px rgba(255, 153, 0, 0.4);
+}
+.variant-warning .compact-slider-value { color: #ffbb33; }
+
+.variant-cyan .compact-track-fill {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
+}
+.variant-cyan .compact-slider-value { color: #38bdf8; }
+
+.variant-blue .compact-track-fill {
+    background: linear-gradient(90deg, #38bdf8, #2563eb);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+.variant-blue .compact-slider-value { color: #60a5fa; }
+
+.variant-purple .compact-track-fill {
+    background: linear-gradient(90deg, #c084fc, #9333ea);
+    box-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
+}
+.variant-purple .compact-slider-value { color: #c084fc; }
+
+.variant-emerald .compact-track-fill {
+    background: linear-gradient(90deg, #34d399, #059669);
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+}
+.variant-emerald .compact-slider-value { color: #34d399; }
+
+/* Handle Pill */
+.compact-handle {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 20px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0,0,0,0.5);
+    pointer-events: none;
+    z-index: 10;
+    transition: transform 0.1s ease;
+}
+
+.compact-track-container:hover .compact-handle,
+.compact-slider-card.is-active-dragging .compact-handle {
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.8);
+}
+
+/* ==========================================================================
+   POLAR COMPASS DIAL
+   ========================================================================== */
+.compact-polar-card {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.compact-polar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.compact-polar-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.compact-polar-readout {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.compact-polar-deg {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.compact-polar-cardinal {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 240, 255, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.compact-dial-interactive-zone {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+}
+
+.compact-compass-dial {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    position: relative;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    background: radial-gradient(circle, #0f172a 0%, #060913 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.1);
+}
+
+.compass-outer-ring {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.compass-ticks-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.compass-cardinal-label {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+.compass-cardinal-label.n { top: 4px; left: 50%; transform: translateX(-50%); color: var(--accent-red); }
+.compass-cardinal-label.e { right: 6px; top: 50%; transform: translateY(-50%); }
+.compass-cardinal-label.s { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.compass-cardinal-label.w { left: 6px; top: 50%; transform: translateY(-50%); }
+
+.compass-needle-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: transform 0.05s ease-out;
+    transform-origin: 50% 50%;
+}
+
+.compass-needle-arrow {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 42px solid #ff3366;
+    filter: drop-shadow(0 0 6px rgba(255, 51, 102, 0.8));
+}
+
+.compass-needle-tail {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 40px solid rgba(255, 255, 255, 0.25);
+}
+
+.compass-center-cap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 8px #fff;
+    border: 2px solid #0f172a;
+}
+
+/* Cardinal Chips */
+.compact-cardinal-chips {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.cardinal-chip {
+    flex: 1;
+    padding: 4px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.cardinal-chip:hover {
+    background: rgba(0, 240, 255, 0.15);
+    color: var(--accent-cyan);
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.cardinal-chip.active {
+    background: var(--accent-cyan);
+    color: #000;
+    font-weight: 700;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+/* ==========================================================================
+   CENTER TACTICAL MAP CONTAINER
+   ========================================================================== */
+.map-center-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+}
+
+.tactical-map-deck {
+    flex: 1;
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    min-height: 500px;
+    background: #0b1120;
+}
+
+#threat-zone-map {
+    width: 100%;
+    height: 100%;
+    background: #0b1120;
+}
+
+/* Pure Dark Shader for Free OpenStreetMap (NO API KEY REQUIRED!) */
+#threat-zone-map .leaflet-tile-pane {
+    filter: brightness(0.65) invert(1) contrast(2.2) hue-rotate(200deg) saturate(0.35) brightness(0.75);
+}
+
+/* Floating HUD */
+.map-hud-overlay-top {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    z-index: 500;
+    pointer-events: none;
+}
+
+.map-hud-chip {
+    pointer-events: auto;
+    background: rgba(11, 17, 32, 0.85);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.map-hud-chip-label {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.map-hud-chip-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.map-layer-toggles {
+    pointer-events: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.layer-toggle-btn {
+    background: rgba(11, 17, 32, 0.85);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+}
+
+.layer-toggle-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.layer-toggle-btn.active {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+}
+
+/* Legend Bar */
+.map-legend-bar {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.legend-group-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.legend-chips-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.legend-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.legend-color-box {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+/* ==========================================================================
+   RIGHT TELEMETRY DECK
+   ========================================================================== */
+.right-telemetry-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+}
+
+.kpi-deck-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.kpi-card {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 240, 255, 0.3);
+    background: rgba(30, 41, 59, 0.7);
+}
+
+.kpi-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.kpi-title {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.kpi-icon {
+    font-size: 14px;
+}
+
+.kpi-val-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.kpi-main-val {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.kpi-unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.kpi-subtext {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Thermal Decay Chart */
+.chart-box-container {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.chart-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #e2e8f0;
+}
+
+.chart-canvas-wrapper {
+    width: 100%;
+    height: 150px;
+    position: relative;
+}
+
+#decay-chart-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Tactical Response Protocol */
+.emergency-plan-card {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.emergency-plan-title {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #f87171;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.emergency-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: #cbd5e1;
+    margin-bottom: 6px;
+}
+
+.emergency-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Action Buttons */
+.export-deck-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.btn-export {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--card-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.btn-export.primary {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.4);
+    color: var(--accent-cyan);
+}
+
+.btn-export:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+}
+
+.btn-export.primary:hover {
+    background: rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+/* Pulse Beacon */
+.pulse-marker-wrapper {
+    background: transparent;
+    border: none;
+}
+
+.pulse-beacon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ff3366;
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px #ff3366;
+    position: relative;
+}
+
+.pulse-beacon::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid #ff3366;
+    animation: ripple 2s infinite ease-out;
+}
+
+@keyframes ripple {
+    0% { transform: scale(0.6); opacity: 1; }
+    100% { transform: scale(2.4); opacity: 0; }
+}
+
+</style>
+
+    <style>
+        /* Embedded Cyber-Industrial Dark Theme for Zero-Cache Delivery */
+        :root {
+            --bg-primary: #060913;
+            --bg-secondary: #0b1120;
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #00f0ff;
+            --accent-red: #ff3366;
+            --accent-orange: #ff9900;
+            --accent-yellow: #ffcc00;
+            --accent-green: #00ff88;
+            --accent-purple: #a855f7;
+            --accent-blue: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: #060913 !important;
+            background-image:
+                radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.04) 0%, transparent 40%) !important;
+            color: #f8fafc !important;
+            font-family: var(--font-sans) !important;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .tactical-header {
+            background: rgba(11, 17, 32, 0.90) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            backdrop-filter: blur(16px);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            gap: 16px;
+        }
+
+        .brand-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon-shield {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(168, 85, 247, 0.15));
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-title .badge-tag {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(0, 240, 255, 0.1);
+            color: #00f0ff;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            letter-spacing: 0.05em;
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 1px;
+        }
+
+        .header-status-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-pill.live {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .status-pill.live::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 8px #00ff88;
+        }
+
+        .status-pill.model {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-header-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: rgba(255, 51, 102, 0.15);
+            border: 1px solid rgba(255, 51, 102, 0.35);
+            color: #ff6688;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header-action:hover {
+            background: rgba(255, 51, 102, 0.3);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 360px 1fr 340px;
+            gap: 16px;
+            padding: 16px 24px 24px;
+            flex: 1;
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .deck-panel {
+            background: rgba(15, 23, 42, 0.75) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .deck-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .deck-panel-title {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            color: #00f0ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .deck-panel-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            max-height: calc(100vh - 120px);
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .preset-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-card:hover {
+            border-color: rgba(0, 240, 255, 0.4);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .preset-card.active {
+            border-color: #00f0ff;
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+        }
+
+        .preset-card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .preset-card-desc {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 4px 0;
+        }
+
+        .section-label-group {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .compact-slider-card {
+            background: rgba(30, 41, 59, 0.45) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px;
+            padding: 10px 12px;
+            transition: all 0.2s ease;
+        }
+
+        .compact-slider-card:hover {
+            background: rgba(30, 41, 59, 0.7) !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        .compact-slider-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .compact-slider-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .compact-slider-readout {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .compact-slider-value {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .compact-slider-unit {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .compact-slider-body {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .compact-stepper-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .compact-stepper-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-color: #00f0ff;
+        }
+
+        .compact-stepper-btn:active {
+            transform: scale(0.92);
+        }
+
+        .compact-track-container {
+            position: relative;
+            height: 20px;
+            flex: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .compact-track-bg {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+        }
+
+        .compact-track-fill {
+            position: absolute;
+            left: 0;
+            height: 8px;
+            width: 0%;
+            border-radius: 4px;
+            pointer-events: none;
+            transition: width 0.05s ease-out;
+        }
+
+        .variant-danger .compact-track-fill {
+            background: linear-gradient(90deg, #ff4466, #ff0055);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+        }
+
+        .variant-danger .compact-slider-value {
+            color: #ff6688;
+        }
+
+        .variant-warning .compact-track-fill {
+            background: linear-gradient(90deg, #ffaa00, #ff7700);
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.4);
+        }
+
+        .variant-warning .compact-slider-value {
+            color: #ffbb33;
+        }
+
+        .variant-cyan .compact-track-fill {
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
+        }
+
+        .variant-cyan .compact-slider-value {
+            color: #38bdf8;
+        }
+
+        .variant-blue .compact-track-fill {
+            background: linear-gradient(90deg, #38bdf8, #2563eb);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+
+        .variant-blue .compact-slider-value {
+            color: #60a5fa;
+        }
+
+        .variant-purple .compact-track-fill {
+            background: linear-gradient(90deg, #c084fc, #9333ea);
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
+        }
+
+        .variant-purple .compact-slider-value {
+            color: #c084fc;
+        }
+
+        .variant-emerald .compact-track-fill {
+            background: linear-gradient(90deg, #34d399, #059669);
+            box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+        }
+
+        .variant-emerald .compact-slider-value {
+            color: #34d399;
+        }
+
+        .compact-handle {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 20px;
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .compact-polar-card {
+            background: rgba(30, 41, 59, 0.45) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .compact-polar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .compact-polar-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .compact-polar-deg {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: #00f0ff;
+        }
+
+        .compact-polar-cardinal {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(0, 240, 255, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        .compact-dial-interactive-zone {
+            display: flex;
+            justify-content: center;
+            padding: 4px 0;
+        }
+
+        .compact-compass-dial {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            position: relative;
+            cursor: grab;
+            background: radial-gradient(circle, #0f172a 0%, #060913 100%);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+
+        .compass-ticks-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .compass-cardinal-label {
+            position: absolute;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .compass-cardinal-label.n {
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff3366;
+        }
+
+        .compass-cardinal-label.e {
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .compass-cardinal-label.s {
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .compass-cardinal-label.w {
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .compass-needle-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            transform-origin: 50% 50%;
+        }
+
+        .compass-needle-arrow {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 42px solid #ff3366;
+            filter: drop-shadow(0 0 6px rgba(255, 51, 102, 0.8));
+        }
+
+        .compass-needle-tail {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 40px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .compass-center-cap {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 8px #fff;
+            border: 2px solid #0f172a;
+        }
+
+        .compact-cardinal-chips {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .cardinal-chip {
+            flex: 1;
+            padding: 4px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            color: #94a3b8;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .cardinal-chip:hover {
+            background: rgba(0, 240, 255, 0.15);
+            color: #00f0ff;
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .cardinal-chip.active {
+            background: #00f0ff;
+            color: #000;
+            font-weight: 700;
+            border-color: #00f0ff;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+        }
+
+        .map-center-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .tactical-map-deck {
+            flex: 1;
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            min-height: 500px;
+            background: #0b1120;
+        }
+
+        #threat-zone-map {
+            width: 100%;
+            height: 100%;
+            background: #0b1120;
+        }
+
+        /* Tactical Dark Filter for Free OpenStreetMap (Zero API Key, Zero Watermarks) */
+        #threat-zone-map .leaflet-tile-pane {
+            filter: brightness(0.65) invert(1) contrast(2.2) hue-rotate(200deg) saturate(0.35) brightness(0.75) !important;
+        }
+
+        .map-hud-overlay-top {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            z-index: 500;
+            pointer-events: none;
+        }
+
+        .map-hud-chip {
+            pointer-events: auto;
+            background: rgba(11, 17, 32, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            backdrop-filter: blur(12px);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .map-hud-chip-label {
+            font-size: 9px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .map-hud-chip-val {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .map-layer-toggles {
+            pointer-events: auto;
+            display: flex;
+            gap: 4px;
+        }
+
+        .layer-toggle-btn {
+            background: rgba(11, 17, 32, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #94a3b8;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+
+        .layer-toggle-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .layer-toggle-btn.active {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: #00f0ff;
+            color: #00f0ff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+        }
+
+        .map-legend-bar {
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 8px 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-group-title {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .legend-chips-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .legend-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: 10.5px;
+            color: #cbd5e1;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .legend-color-box {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .right-telemetry-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            max-height: calc(100vh - 120px);
+        }
+
+        .kpi-deck-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .kpi-card {
+            background: rgba(30, 41, 59, 0.45) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px;
+            padding: 12px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 240, 255, 0.3);
+            background: rgba(30, 41, 59, 0.7);
+        }
+
+        .kpi-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .kpi-icon {
+            font-size: 14px;
+        }
+
+        .kpi-val-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .kpi-main-val {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .kpi-unit {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .kpi-subtext {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .chart-box-container {
+            background: rgba(30, 41, 59, 0.45) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .chart-title {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #e2e8f0;
+        }
+
+        .chart-canvas-wrapper {
+            width: 100%;
+            height: 150px;
+            position: relative;
+        }
+
+        #decay-chart-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .emergency-plan-card {
+            background: rgba(239, 68, 68, 0.06) !important;
+            border: 1px solid rgba(239, 68, 68, 0.25) !important;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .emergency-plan-title {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #f87171;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .emergency-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 11.5px;
+            line-height: 1.4;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+
+        .emergency-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .export-deck-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-export {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .btn-export.primary {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: rgba(0, 240, 255, 0.4);
+            color: #00f0ff;
+        }
+
+        .btn-export:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .btn-export.primary:hover {
+            background: rgba(0, 240, 255, 0.25);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .pulse-beacon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ff3366;
+            border: 2px solid #fff;
+            box-shadow: 0 0 12px #ff3366;
+            position: relative;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Tactical App Header -->
+    <header class="tactical-header">
+        <div class="brand-block">
+            <div class="brand-icon-shield">🛡️</div>
+            <div>
+                <h1 class="brand-title">
+                    DER-02: Threat-Zone Estimation
+                    <span class="badge-tag">Approach 2 · CompactUI</span>
+                </h1>
+                <p class="brand-subtitle">Point-Source Thermal Radiation (API 521) & Blast Overpressure
+                    (Kingery-Bulmash)</p>
+            </div>
+        </div>
+
+        <div class="header-status-group">
+            <div class="status-pill live">Active Sim</div>
+            <div class="status-pill model">API 521 / K-B Model</div>
+            <button type="button" class="btn-header-action" id="btn-recenter" title="Re-center map on release source">
+                <span>🎯 Recenter Epicenter</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main 3-Column Layout -->
+    <main class="app-container">
+
+        <!-- Left Deck: CompactSlider Control Deck -->
+        <aside class="deck-panel left-controls-col">
+            <div class="deck-panel-header">
+                <span class="deck-panel-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                    Source & Atmospheric Deck
+                </span>
+            </div>
+
+            <div class="deck-panel-body">
+                <!-- Facility Preset Switcher -->
+                <div class="preset-grid">
+                    <div class="preset-card active" data-preset="hpcl">
+                        <div class="preset-card-title">🏭 HPCL Visakh</div>
+                        <div class="preset-card-desc">Dense refinery complex, 5.0M kg fuel, 45 MJ/kg</div>
+                    </div>
+                    <div class="preset-card" data-preset="lg_polymers">
+                        <div class="preset-card-title">⚗️ LG Polymers</div>
+                        <div class="preset-card-desc">Isolated chemical tank, 1.8M kg, 2020 incident area</div>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- Sliders Section: Fuel & Combustion -->
+                <div class="section-label-group">🔥 Hazard Source Parameters</div>
+                <div id="slider-fuel-mass"></div>
+                <div id="slider-heat-combustion"></div>
+                <div id="slider-burn-duration"></div>
+                <div id="slider-transmissivity"></div>
+                <div id="slider-tnt-yield"></div>
+
+                <div class="section-divider"></div>
+
+                <!-- Sliders Section: Meteorological Vectors -->
+                <div class="section-label-group">💨 Atmospheric & Plume Dispersion</div>
+                <div id="slider-wind-speed"></div>
+                <div id="slider-wind-direction"></div>
+            </div>
+        </aside>
+
+        <!-- Center Deck: Tactical Map & Contours -->
+        <section class="map-center-col">
+            <div class="tactical-map-deck">
+                <div id="threat-zone-map"></div>
+
+                <!-- Map Floating HUD -->
+                <div class="map-hud-overlay-top">
+                    <div class="map-hud-chip">
+                        <div>
+                            <div class="map-hud-chip-label">Origin Coords</div>
+                            <div class="map-hud-chip-val" id="hud-coords">17.6883°N, 83.2519°E</div>
+                        </div>
+                        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1);"></div>
+                        <div>
+                            <div class="map-hud-chip-label">Wind Vector</div>
+                            <div class="map-hud-chip-val" id="hud-wind-summary">4.5 m/s · 65° ENE</div>
+                        </div>
+                    </div>
+
+                    <div class="map-layer-toggles">
+                        <button type="button" class="layer-toggle-btn active" id="toggle-layer-thermal">
+                            <span>🔥 Thermal</span>
+                        </button>
+                        <button type="button" class="layer-toggle-btn active" id="toggle-layer-blast">
+                            <span>💥 Blast</span>
+                        </button>
+                        <button type="button" class="layer-toggle-btn active" id="toggle-layer-wind">
+                            <span>💨 Wind</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Threat Bands Legend -->
+            <div class="map-legend-bar">
+                <div class="legend-group-title">Zone Classification:</div>
+                <div class="legend-chips-container">
+                    <div class="legend-pill"><span class="legend-color-box" style="background: #E24B4A;"></span> Lethal
+                        Fire (37.5 kW/m²)</div>
+                    <div class="legend-pill"><span class="legend-color-box" style="background: #F0997B;"></span> Serious
+                        Burns (12.5 kW/m²)</div>
+                    <div class="legend-pill"><span class="legend-color-box" style="background: #FAC775;"></span> Pain
+                        Cutoff (4.0 kW/m²)</div>
+                    <div class="legend-pill"><span class="legend-color-box" style="background: #185FA5;"></span>
+                        Structural Collapse (3.0 psi)</div>
+                    <div class="legend-pill"><span class="legend-color-box" style="background: #378ADD;"></span> Partial
+                        Failure (1.0 psi)</div>
+                    <div class="legend-pill"><span class="legend-color-box" style="background: #85B7EB;"></span> Glass
+                        Breakage (0.3 psi)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Deck: Telemetry, KPIs, Live Decay Graph & Action Plan -->
+        <aside class="right-telemetry-col">
+
+            <!-- KPI Impact Deck -->
+            <div class="kpi-deck-grid">
+                <div class="kpi-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Fatal Radiation</span>
+                        <span class="kpi-icon">🔥</span>
+                    </div>
+                    <div class="kpi-val-row">
+                        <span class="kpi-main-val" id="kpi-fatal-radius">0</span>
+                        <span class="kpi-unit">meters</span>
+                    </div>
+                    <div class="kpi-subtext">37.5 kW/m² nominal limit</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Structural Collapse</span>
+                        <span class="kpi-icon">💥</span>
+                    </div>
+                    <div class="kpi-val-row">
+                        <span class="kpi-main-val" id="kpi-collapse-radius">0</span>
+                        <span class="kpi-unit">meters</span>
+                    </div>
+                    <div class="kpi-subtext">3.0 psi severe threshold</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Total Danger Footprint</span>
+                        <span class="kpi-icon">🗺️</span>
+                    </div>
+                    <div class="kpi-val-row">
+                        <span class="kpi-main-val" id="kpi-total-area">0.00</span>
+                        <span class="kpi-unit">km²</span>
+                    </div>
+                    <div class="kpi-subtext">Cumulative ground contour</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Downwind Threat</span>
+                        <span class="kpi-icon">💨</span>
+                    </div>
+                    <div class="kpi-val-row">
+                        <span class="kpi-main-val" id="kpi-downwind-reach">0</span>
+                        <span class="kpi-unit">meters</span>
+                    </div>
+                    <div class="kpi-subtext">Elongated plume tip</div>
+                </div>
+            </div>
+
+            <!-- Live Decay Curve Chart -->
+            <div class="chart-box-container">
+                <div class="chart-header">
+                    <span class="chart-title">Thermal Radiation Decay Flux (kW/m² vs Distance)</span>
+                </div>
+                <div class="chart-canvas-wrapper">
+                    <canvas id="decay-chart-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Emergency Action Plan Card -->
+            <div class="emergency-plan-card">
+                <div class="emergency-plan-title">
+                    <span>🚨 Tactical Response Protocol</span>
+                </div>
+                <div class="emergency-item">
+                    <span>•</span>
+                    <div><strong>Initial Isolation Perimeter:</strong> Evacuate all personnel within <span
+                            id="reco-isolation-dist" style="color: #fca5a5; font-family: var(--font-mono);">0
+                            meters</span> radius.</div>
+                </div>
+                <div class="emergency-item">
+                    <span>•</span>
+                    <div><strong>Downwind Evacuation Corridor:</strong> Clear downwind sectors up to <span
+                            id="reco-downwind-dist" style="color: #fde68a; font-family: var(--font-mono);">0
+                            meters</span>.</div>
+                </div>
+                <div class="emergency-item">
+                    <span>•</span>
+                    <div><strong>PPE Standards:</strong> Full turnout gear and positive pressure SCBA mandatory within
+                        pain threshold envelope.</div>
+                </div>
+            </div>
+
+            <!-- Export Deck -->
+            <div class="export-deck-bar">
+                <button type="button" class="btn-export primary" id="btn-export-geojson"
+                    title="Download standard GeoJSON polygons for ArcGIS / QGIS">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Export GeoJSON</span>
+                </button>
+                <button type="button" class="btn-export" id="btn-print-report"
+                    title="Print tactical incident assessment report">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    <span>Print Report</span>
+                </button>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Application Scripts (Inlined Self-Contained Demo) -->
+    <script>
+/**
+ * DER-02 Industrial Threat-Zone Estimation: Scientific Hazard Physics Engine
+ * Faithfully implements Point-Source Thermal Radiation (API 521), 
+ * Kingery-Bulmash Blast Overpressure, and Wind-Skewed Threat Zone Contours.
+ */
+
+(function(root) {
+    const HazardModel = {};
+
+    HazardModel.THERMAL_BANDS = {
+        fatality_high: { threshold: 37.5, name: "100% Lethality (1 min)", desc: "Fatal in 1 min / Equipment damage", color: "#FF3B30", fillOpacity: 0.30 },
+        injury_serious: { threshold: 12.5, name: "2nd Degree Burns (1 min)", desc: "Serious injury / Wood ignition", color: "#FF9500", fillOpacity: 0.22 },
+        pain_threshold: { threshold: 4.0, name: "Pain Threshold (20s)", desc: "First degree burns / Safe limit", color: "#FFCC00", fillOpacity: 0.18 }
+    };
+
+    HazardModel.OVERPRESSURE_BANDS = {
+        severe_damage: { threshold: 3.0, name: "Severe Structural Damage (3.0 psi)", desc: "Heavy machinery / Steel collapse", color: "#5856D6", fillOpacity: 0.22 },
+        partial_collapse: { threshold: 1.0, name: "Partial Collapse (1.0 psi)", desc: "Standard masonry failure", color: "#0071E3", fillOpacity: 0.16 },
+        minor_damage: { threshold: 0.3, name: "Minor Damage / Glass (0.3 psi)", desc: "Window breakage / Safe cutoff", color: "#32ADE6", fillOpacity: 0.12 }
+    };
+
+    HazardModel.PRESETS = {
+        "hpcl": {
+            name: "HPCL Visakh Refinery",
+            desc: "Large refinery, dense processing units (Visakhapatnam, India)",
+            lat: 17.688253,
+            lon: 83.2519434,
+            fuelMassKg: 5000000,
+            heatOfCombustion: 45.0,
+            tntYieldFactor: 0.3,
+            windSpeed: 4.5,
+            windDirection: 65,
+            burnDuration: 60,
+            transmissivity: 0.70
+        },
+        "lg_polymers": {
+            name: "LG Polymers Site",
+            desc: "Isolated chemical tank, real 2020 incident area (RR Venkatapuram)",
+            lat: 17.75528,
+            lon: 83.20889,
+            fuelMassKg: 1800000,
+            heatOfCombustion: 39.9,
+            tntYieldFactor: 0.1,
+            windSpeed: 3.2,
+            windDirection: 120,
+            burnDuration: 60,
+            transmissivity: 0.70
+        }
+    };
+
+    /**
+     * Calculates Thermal Radiation Flux (kW/m²) at a given distance
+     */
+    HazardModel.calculateThermalRadiation = function(distanceM, fuelMassKg, heatOfCombustionMJkg, burnDurationS = 60, transmissivity = 0.70) {
+        if (distanceM <= 0) return Infinity;
+        const totalEnergyJ = fuelMassKg * heatOfCombustionMJkg * 1e6;
+        const energyReleaseRateW = totalEnergyJ / burnDurationS;
+        const radiativeFraction = 0.30;
+        const qWm2 = (radiativeFraction * energyReleaseRateW * transmissivity) / (4 * Math.PI * Math.pow(distanceM, 2));
+        return qWm2 / 1000.0; // Return in kW/m²
+    };
+
+    /**
+     * Calculates distance (m) to reach a specific thermal radiation threshold (kW/m²)
+     */
+    HazardModel.distanceForThermalThreshold = function(thresholdKWm2, fuelMassKg, heatOfCombustionMJkg, burnDurationS = 60, transmissivity = 0.70) {
+        if (thresholdKWm2 <= 0) return 0;
+        const totalEnergyJ = fuelMassKg * heatOfCombustionMJkg * 1e6;
+        const energyReleaseRateW = totalEnergyJ / burnDurationS;
+        const radiativeFraction = 0.30;
+        const thresholdWm2 = thresholdKWm2 * 1000.0;
+        const rSq = (radiativeFraction * energyReleaseRateW * transmissivity) / (4 * Math.PI * thresholdWm2);
+        return Math.sqrt(Math.max(0, rSq));
+    };
+
+    /**
+     * Calculates distance (m) to reach a specific blast overpressure threshold (psi)
+     */
+    HazardModel.distanceForOverpressureThreshold = function(thresholdPsi, fuelMassKg, heatOfCombustionMJkg, tntYieldFactor = 0.1) {
+        const tntEnergyMJkg = 4.184;
+        const totalEnergyMJ = fuelMassKg * heatOfCombustionMJkg;
+        const tntEquivalentKg = (totalEnergyMJ * tntYieldFactor) / tntEnergyMJkg;
+        
+        // Discrete scaled distance lookup (Kingery-Bulmash standard points)
+        const scaledDistanceLookup = {
+            3.0: 2.5,
+            1.0: 4.5,
+            0.3: 9.0
+        };
+        
+        let Z = scaledDistanceLookup[thresholdPsi];
+        if (!Z) {
+            Z = 4.5 * Math.pow(1.0 / Math.max(0.01, thresholdPsi), 0.45);
+        }
+        
+        return Z * Math.cbrt(Math.max(0, tntEquivalentKg));
+    };
+
+    /**
+     * Generates an atmospheric wind-skewed polygon (array of [lat, lon] coordinates)
+     */
+    HazardModel.generateWindSkewedZone = function(centerLat, centerLon, radiusM, windDirectionDeg, windSpeedMs, elongationFactorPerMs = 0.15, nPoints = 96) {
+        if (radiusM <= 0) return [];
+        
+        const downwindMult = 1.0 + (elongationFactorPerMs * windSpeedMs);
+        const upwindMult = Math.max(0.40, 1.0 - (elongationFactorPerMs * windSpeedMs));
+        const windRad = (windDirectionDeg * Math.PI) / 180.0;
+        
+        const points = [];
+        for (let i = 0; i < nPoints; i++) {
+            const theta = (i / nPoints) * 2.0 * Math.PI;
+            const angleFromWind = theta - windRad;
+            const blend = (Math.cos(angleFromWind) + 1.0) / 2.0;
+            const r = radiusM * (upwindMult + blend * (downwindMult - upwindMult));
+            
+            const dx = r * Math.sin(theta);
+            const dy = r * Math.cos(theta);
+            
+            // Approximate meter to lat/lon conversions at center latitude
+            const dLat = dy / 111320.0;
+            const dLon = dx / (111320.0 * Math.cos((centerLat * Math.PI) / 180.0));
+            
+            points.push([centerLat + dLat, centerLon + dLon]);
+        }
+        
+        return points;
+    };
+
+    /**
+     * Calculates total affected ground area (in km²) from polygon
+     */
+    HazardModel.calculatePolygonAreaKm2 = function(polygonLatLons, centerLat) {
+        if (!polygonLatLons || polygonLatLons.length < 3) return 0;
+        
+        let areaM2 = 0;
+        const n = polygonLatLons.length;
+        const cosLat = Math.cos((centerLat * Math.PI) / 180.0);
+        
+        for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            const y1 = polygonLatLons[i][0] * 111320.0;
+            const x1 = polygonLatLons[i][1] * 111320.0 * cosLat;
+            const y2 = polygonLatLons[j][0] * 111320.0;
+            const x2 = polygonLatLons[j][1] * 111320.0 * cosLat;
+            areaM2 += (x1 * y2 - x2 * y1);
+        }
+        
+        return Math.abs(areaM2) / 2.0 / 1e6;
+    };
+
+    /**
+     * Helper to convert degrees to cardinal text
+     */
+    HazardModel.getCardinalDirection = function(deg) {
+        const dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+        const normalized = ((deg % 360) + 360) % 360;
+        const idx = Math.round(normalized / (360.0 / dirs.length)) % dirs.length;
+        return dirs[idx];
+    };
+
+    /**
+     * Helper for Beaufort Wind Scale description
+     */
+    HazardModel.getBeaufortDesc = function(speedMs) {
+        if (speedMs < 0.5) return "Calm";
+        if (speedMs <= 1.5) return "Light Air";
+        if (speedMs <= 3.3) return "Light Breeze";
+        if (speedMs <= 5.5) return "Gentle Breeze";
+        if (speedMs <= 7.9) return "Moderate Breeze";
+        if (speedMs <= 10.7) return "Fresh Breeze";
+        if (speedMs <= 13.8) return "Strong Breeze";
+        return "High Wind / Gale";
+    };
+
+    // Attach to global window object
+    root.HazardModel = HazardModel;
+})(typeof window !== 'undefined' ? window : this);
+
+    </script>
+    <script>
+/**
+ * CompactSlider UI Component Suite
+ * Inspired by buh/CompactSlider (SwiftUI)
+ * Implements Prominent Linear Sliders, Polar Wheel/Compass Scrubbers, 
+ * Fine-tune Steppers, and Dynamic Monospace Value Displays.
+ */
+
+(function(root) {
+
+class CompactLinearSlider {
+    constructor(options) {
+        this.containerId = options.containerId;
+        this.label = options.label || "Value";
+        this.icon = options.icon || "";
+        this.min = options.min !== undefined ? options.min : 0;
+        this.max = options.max !== undefined ? options.max : 100;
+        this.step = options.step || 1;
+        this.value = options.value !== undefined ? options.value : this.min;
+        this.unit = options.unit || "";
+        this.variant = options.variant || "primary"; // 'danger', 'warning', 'info', 'purple', 'emerald', 'cyan'
+        this.formatFn = options.formatFn || ((v) => v.toLocaleString());
+        this.onChange = options.onChange || (() => {});
+        this.showStepper = options.showStepper !== false;
+        this.scale = options.scale || "linear"; // 'linear' or 'log'
+        
+        this.isDragging = false;
+        this.init();
+    }
+
+    init() {
+        this.container = typeof this.containerId === 'string' 
+            ? document.getElementById(this.containerId) 
+            : this.containerId;
+            
+        if (!this.container) {
+            console.error(`CompactSlider container #${this.containerId} not found.`);
+            return;
+        }
+
+        this.render();
+        this.bindEvents();
+        this.updateVisuals(false);
+    }
+
+    render() {
+        this.container.classList.add("compact-slider-wrapper", `variant-${this.variant}`);
+        this.container.innerHTML = `
+            <div class="compact-slider-card">
+                <div class="compact-slider-header">
+                    <div class="compact-slider-title">
+                        ${this.icon ? `<span class="compact-slider-icon">${this.icon}</span>` : ''}
+                        <span class="compact-slider-label">${this.label}</span>
+                    </div>
+                    <div class="compact-slider-readout">
+                        <span class="compact-slider-value" id="${this.containerId}-val">${this.formatFn(this.value)}</span>
+                        ${this.unit ? `<span class="compact-slider-unit">${this.unit}</span>` : ''}
+                    </div>
+                </div>
+                
+                <div class="compact-slider-body">
+                    ${this.showStepper ? `
+                        <button type="button" class="compact-stepper-btn btn-minus" title="Decrease value" aria-label="Decrease">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
+                    ` : ''}
+                    
+                    <div class="compact-track-container" tabindex="0" role="slider" aria-valuemin="${this.min}" aria-valuemax="${this.max}" aria-valuenow="${this.value}">
+                        <div class="compact-track-bg"></div>
+                        <div class="compact-track-fill"></div>
+                        <div class="compact-track-ticks"></div>
+                        <div class="compact-handle">
+                            <div class="compact-handle-grip"></div>
+                        </div>
+                    </div>
+                    
+                    ${this.showStepper ? `
+                        <button type="button" class="compact-stepper-btn btn-plus" title="Increase value" aria-label="Increase">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+
+        this.trackContainer = this.container.querySelector(".compact-track-container");
+        this.trackFill = this.container.querySelector(".compact-track-fill");
+        this.handle = this.container.querySelector(".compact-handle");
+        this.valueDisplay = this.container.querySelector(".compact-slider-value");
+        this.minusBtn = this.container.querySelector(".btn-minus");
+        this.plusBtn = this.container.querySelector(".btn-plus");
+        this.card = this.container.querySelector(".compact-slider-card");
+    }
+
+    getPercentage() {
+        if (this.scale === "log") {
+            const minLog = Math.log(Math.max(1, this.min));
+            const maxLog = Math.log(this.max);
+            const valLog = Math.log(Math.max(1, this.value));
+            return Math.max(0, Math.min(1, (valLog - minLog) / (maxLog - minLog)));
+        }
+        return Math.max(0, Math.min(1, (this.value - this.min) / (this.max - this.min)));
+    }
+
+    valueFromPercentage(pct) {
+        pct = Math.max(0, Math.min(1, pct));
+        let rawVal;
+        if (this.scale === "log") {
+            const minLog = Math.log(Math.max(1, this.min));
+            const maxLog = Math.log(this.max);
+            rawVal = Math.exp(minLog + pct * (maxLog - minLog));
+        } else {
+            rawVal = this.min + pct * (this.max - this.min);
+        }
+        
+        // Round to nearest step
+        if (this.step < 1) {
+            const precision = Math.round(-Math.log10(this.step));
+            const stepped = Math.round(rawVal / this.step) * this.step;
+            return Number(stepped.toFixed(precision));
+        } else {
+            const stepped = Math.round(rawVal / this.step) * this.step;
+            return Math.max(this.min, Math.min(this.max, stepped));
+        }
+    }
+
+    updateVisuals(triggerCallback = true) {
+        const pct = this.getPercentage();
+        const pct100 = (pct * 100).toFixed(2) + "%";
+        
+        this.trackFill.style.width = pct100;
+        this.handle.style.left = pct100;
+        this.valueDisplay.textContent = this.formatFn(this.value);
+        this.trackContainer.setAttribute("aria-valuenow", this.value);
+
+        if (triggerCallback && this.onChange) {
+            this.onChange(this.value);
+        }
+    }
+
+    setValue(newVal, triggerCallback = true) {
+        newVal = Math.max(this.min, Math.min(this.max, newVal));
+        if (this.step < 1) {
+            const precision = Math.round(-Math.log10(this.step));
+            newVal = Number(newVal.toFixed(precision));
+        } else {
+            newVal = Math.round(newVal / this.step) * this.step;
+        }
+        this.value = newVal;
+        this.updateVisuals(triggerCallback);
+    }
+
+    bindEvents() {
+        const onPointerMove = (e) => {
+            if (!this.isDragging) return;
+            const rect = this.trackContainer.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const pct = (clientX - rect.left) / rect.width;
+            const newVal = this.valueFromPercentage(pct);
+            if (newVal !== this.value) {
+                this.value = newVal;
+                this.updateVisuals(true);
+            }
+        };
+
+        const onPointerUp = () => {
+            if (this.isDragging) {
+                this.isDragging = false;
+                this.card.classList.remove("is-active-dragging");
+                window.removeEventListener("pointermove", onPointerMove);
+                window.removeEventListener("pointerup", onPointerUp);
+                window.removeEventListener("pointercancel", onPointerUp);
+            }
+        };
+
+        this.trackContainer.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            this.isDragging = true;
+            this.card.classList.add("is-active-dragging");
+            
+            const rect = this.trackContainer.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            this.value = this.valueFromPercentage(pct);
+            this.updateVisuals(true);
+            
+            window.addEventListener("pointermove", onPointerMove);
+            window.addEventListener("pointerup", onPointerUp);
+            window.addEventListener("pointercancel", onPointerUp);
+        });
+
+        // Mouse Wheel Scrubbing
+        this.trackContainer.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 1 : -1;
+            this.setValue(this.value + delta * this.step, true);
+        }, { passive: false });
+
+        // Stepper Buttons
+        if (this.minusBtn) {
+            this.minusBtn.addEventListener("click", () => {
+                this.setValue(this.value - this.step, true);
+            });
+        }
+        if (this.plusBtn) {
+            this.plusBtn.addEventListener("click", () => {
+                this.setValue(this.value + this.step, true);
+            });
+        }
+
+        // Keyboard Support
+        this.trackContainer.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                e.preventDefault();
+                this.setValue(this.value - this.step, true);
+            } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                e.preventDefault();
+                this.setValue(this.value + this.step, true);
+            } else if (e.key === "Home") {
+                e.preventDefault();
+                this.setValue(this.min, true);
+            } else if (e.key === "End") {
+                e.preventDefault();
+                this.setValue(this.max, true);
+            }
+        });
+    }
+}
+
+
+/**
+ * CompactPolarCompassSlider
+ * Inspired by CompactSlider polar / wheel angle controls
+ */
+class CompactPolarCompassSlider {
+    constructor(options) {
+        this.containerId = options.containerId;
+        this.label = options.label || "Wind Direction";
+        this.value = options.value !== undefined ? options.value : 0; // 0 to 360 deg
+        this.onChange = options.onChange || (() => {});
+        this.isDragging = false;
+        
+        this.init();
+    }
+
+    init() {
+        this.container = typeof this.containerId === 'string' 
+            ? document.getElementById(this.containerId) 
+            : this.containerId;
+            
+        if (!this.container) {
+            console.error(`CompactPolarCompassSlider container #${this.containerId} not found.`);
+            return;
+        }
+
+        this.render();
+        this.bindEvents();
+        this.updateVisuals(false);
+    }
+
+    render() {
+        this.container.classList.add("compact-polar-wrapper");
+        this.container.innerHTML = `
+            <div class="compact-polar-card">
+                <div class="compact-polar-header">
+                    <div class="compact-polar-title">
+                        <span class="compact-polar-icon">🧭</span>
+                        <span class="compact-polar-label">${this.label}</span>
+                    </div>
+                    <div class="compact-polar-readout">
+                        <span class="compact-polar-deg" id="${this.containerId}-deg">0°</span>
+                        <span class="compact-polar-cardinal" id="${this.containerId}-cardinal">N</span>
+                    </div>
+                </div>
+
+                <div class="compact-dial-interactive-zone">
+                    <div class="compact-compass-dial" tabindex="0" role="slider" aria-label="Wind Direction Compass">
+                        <div class="compass-outer-ring">
+                            <div class="compass-ticks-svg">
+                                ${this.generateDialTicks()}
+                            </div>
+                            <div class="compass-cardinal-label n">N</div>
+                            <div class="compass-cardinal-label e">E</div>
+                            <div class="compass-cardinal-label s">S</div>
+                            <div class="compass-cardinal-label w">W</div>
+                        </div>
+                        <div class="compass-needle-layer">
+                            <div class="compass-needle-arrow"></div>
+                            <div class="compass-needle-tail"></div>
+                            <div class="compass-center-cap"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compact-cardinal-chips">
+                    <button type="button" class="cardinal-chip" data-deg="0">N</button>
+                    <button type="button" class="cardinal-chip" data-deg="45">NE</button>
+                    <button type="button" class="cardinal-chip" data-deg="90">E</button>
+                    <button type="button" class="cardinal-chip" data-deg="135">SE</button>
+                    <button type="button" class="cardinal-chip" data-deg="180">S</button>
+                    <button type="button" class="cardinal-chip" data-deg="225">SW</button>
+                    <button type="button" class="cardinal-chip" data-deg="270">W</button>
+                    <button type="button" class="cardinal-chip" data-deg="315">NW</button>
+                </div>
+            </div>
+        `;
+
+        this.dial = this.container.querySelector(".compact-compass-dial");
+        this.needle = this.container.querySelector(".compass-needle-layer");
+        this.degDisplay = this.container.querySelector(".compact-polar-deg");
+        this.cardinalDisplay = this.container.querySelector(".compact-polar-cardinal");
+        this.card = this.container.querySelector(".compact-polar-card");
+        this.cardinalChips = this.container.querySelectorAll(".cardinal-chip");
+    }
+
+    generateDialTicks() {
+        let svg = `<svg viewBox="0 0 100 100" class="compass-svg">`;
+        for (let deg = 0; deg < 360; deg += 15) {
+            const isMajor = deg % 45 === 0;
+            const isMedium = deg % 30 === 0;
+            const len = isMajor ? 8 : (isMedium ? 5 : 3);
+            const stroke = isMajor ? '#00f0ff' : (isMedium ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)');
+            const strokeW = isMajor ? 1.8 : 1.0;
+            const rad = (deg * Math.PI) / 180;
+            const x1 = 50 + 44 * Math.sin(rad);
+            const y1 = 50 - 44 * Math.cos(rad);
+            const x2 = 50 + (44 - len) * Math.sin(rad);
+            const y2 = 50 - (44 - len) * Math.cos(rad);
+            svg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+        }
+        svg += `</svg>`;
+        return svg;
+    }
+
+    getCardinalName(deg) {
+        const dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+        const normalized = ((deg % 360) + 360) % 360;
+        const idx = Math.round(normalized / (360.0 / dirs.length)) % dirs.length;
+        return dirs[idx];
+    }
+
+    updateVisuals(triggerCallback = true) {
+        const normalized = Math.round(((this.value % 360) + 360) % 360);
+        this.needle.style.transform = `rotate(${normalized}deg)`;
+        this.degDisplay.textContent = `${normalized}°`;
+        const cardinal = this.getCardinalName(normalized);
+        this.cardinalDisplay.textContent = cardinal;
+
+        // Highlight active cardinal chip if matched
+        this.cardinalChips.forEach(chip => {
+            const chipDeg = parseInt(chip.getAttribute("data-deg"), 10);
+            if (Math.abs(chipDeg - normalized) <= 10 || (chipDeg === 0 && normalized >= 350)) {
+                chip.classList.add("active");
+            } else {
+                chip.classList.remove("active");
+            }
+        });
+
+        if (triggerCallback && this.onChange) {
+            this.onChange(normalized);
+        }
+    }
+
+    setAngleFromEvent(e) {
+        const rect = this.dial.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        
+        let rad = Math.atan2(dx, -dy);
+        let deg = (rad * 180) / Math.PI;
+        if (deg < 0) deg += 360;
+        
+        this.value = Math.round(deg);
+        this.updateVisuals(true);
+    }
+
+    setValue(deg, triggerCallback = true) {
+        this.value = Math.round(((deg % 360) + 360) % 360);
+        this.updateVisuals(triggerCallback);
+    }
+
+    bindEvents() {
+        const onPointerMove = (e) => {
+            if (!this.isDragging) return;
+            this.setAngleFromEvent(e);
+        };
+
+        const onPointerUp = () => {
+            if (this.isDragging) {
+                this.isDragging = false;
+                this.card.classList.remove("is-active-dragging");
+                window.removeEventListener("pointermove", onPointerMove);
+                window.removeEventListener("pointerup", onPointerUp);
+                window.removeEventListener("pointercancel", onPointerUp);
+            }
+        };
+
+        this.dial.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            this.isDragging = true;
+            this.card.classList.add("is-active-dragging");
+            this.setAngleFromEvent(e);
+            
+            window.addEventListener("pointermove", onPointerMove);
+            window.addEventListener("pointerup", onPointerUp);
+            window.addEventListener("pointercancel", onPointerUp);
+        });
+
+        // Quick cardinal chips click
+        this.cardinalChips.forEach(chip => {
+            chip.addEventListener("click", () => {
+                const targetDeg = parseInt(chip.getAttribute("data-deg"), 10);
+                this.setValue(targetDeg, true);
+            });
+        });
+
+        // Wheel rotation
+        this.dial.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const step = e.shiftKey ? 15 : 5;
+            const delta = e.deltaY < 0 ? step : -step;
+            this.setValue(this.value + delta, true);
+        }, { passive: false });
+
+        // Keyboard navigation
+        this.dial.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                e.preventDefault();
+                this.setValue(this.value - 5, true);
+            } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                e.preventDefault();
+                this.setValue(this.value + 5, true);
+            }
+        });
+    }
+}
+
+// Expose globally
+root.CompactLinearSlider = CompactLinearSlider;
+root.CompactPolarCompassSlider = CompactPolarCompassSlider;
+
+})(typeof window !== 'undefined' ? window : this);
+
+    </script>
+    <script>
+/**
+ * DER-02 Industrial Threat-Zone Estimation (Approach 2 CompactUI)
+ * Main Dashboard Controller
+ */
+
+(function() {
+    const HM = window.HazardModel;
+    const CompactLinearSlider = window.CompactLinearSlider;
+    const CompactPolarCompassSlider = window.CompactPolarCompassSlider;
+
+    class ThreatZoneApp {
+        constructor() {
+            this.state = {
+                preset: "hpcl",
+                lat: HM.PRESETS.hpcl.lat,
+                lon: HM.PRESETS.hpcl.lon,
+                fuelMassKg: HM.PRESETS.hpcl.fuelMassKg,
+                heatOfCombustion: HM.PRESETS.hpcl.heatOfCombustion,
+                burnDuration: HM.PRESETS.hpcl.burnDuration,
+                transmissivity: HM.PRESETS.hpcl.transmissivity,
+                tntYieldFactor: HM.PRESETS.hpcl.tntYieldFactor,
+                windSpeed: HM.PRESETS.hpcl.windSpeed,
+                windDirection: HM.PRESETS.hpcl.windDirection,
+                elongationFactor: 0.15,
+                layers: {
+                    thermal: true,
+                    overpressure: true,
+                    windVector: true
+                }
+            };
+
+            this.map = null;
+            this.layersGroup = null;
+            this.epicenterMarker = null;
+            this.sliders = {};
+            
+            this.init();
+        }
+
+        init() {
+            this.initMap();
+            this.initCompactSliders();
+            this.bindGlobalEvents();
+            this.updateScenario(true);
+        }
+
+        initMap() {
+            const mapEl = document.getElementById('threat-zone-map');
+            if (!mapEl) return;
+
+            this.map = L.map('threat-zone-map', {
+                center: [this.state.lat, this.state.lon],
+                zoom: 14,
+                zoomControl: false,
+                attributionControl: false
+            });
+
+            // Add zoom control in bottom right
+            L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+
+            // Standard Free OpenStreetMap Tiles (100% Free, No API Key Required)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(this.map);
+
+            this.layersGroup = L.layerGroup().addTo(this.map);
+
+            // Click on map to set custom epicenter
+            this.map.on('click', (e) => {
+                this.state.lat = e.latlng.lat;
+                this.state.lon = e.latlng.lng;
+                this.state.preset = "custom";
+                this.updatePresetButtons();
+                this.updateScenario();
+            });
+
+            // Trigger resize after load
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, 250);
+        }
+
+        initCompactSliders() {
+            // 1. Fuel Mass Slider (Prominent Danger Red)
+            this.sliders.fuelMass = new CompactLinearSlider({
+                containerId: "slider-fuel-mass",
+                label: "Fuel Mass Inventory",
+                icon: "🛢️",
+                min: 10000,
+                max: 10000000,
+                step: 50000,
+                value: this.state.fuelMassKg,
+                unit: "kg",
+                variant: "danger",
+                scale: "log",
+                formatFn: (v) => v >= 1000000 ? `${(v / 1000000).toFixed(2)}M` : `${(v / 1000).toFixed(0)}k`,
+                onChange: (val) => {
+                    this.state.fuelMassKg = val;
+                    this.updateScenario();
+                }
+            });
+
+            // 2. Heat of Combustion (Warning Amber)
+            this.sliders.heatOfCombustion = new CompactLinearSlider({
+                containerId: "slider-heat-combustion",
+                label: "Heat of Combustion",
+                icon: "🔥",
+                min: 15.0,
+                max: 60.0,
+                step: 0.1,
+                value: this.state.heatOfCombustion,
+                unit: "MJ/kg",
+                variant: "warning",
+                formatFn: (v) => v.toFixed(1),
+                onChange: (val) => {
+                    this.state.heatOfCombustion = val;
+                    this.updateScenario();
+                }
+            });
+
+            // 3. Burn Duration (Blue)
+            this.sliders.burnDuration = new CompactLinearSlider({
+                containerId: "slider-burn-duration",
+                label: "Pool Fire Burn Duration",
+                icon: "⏱️",
+                min: 10,
+                max: 300,
+                step: 5,
+                value: this.state.burnDuration,
+                unit: "sec",
+                variant: "blue",
+                formatFn: (v) => `${v}s`,
+                onChange: (val) => {
+                    this.state.burnDuration = val;
+                    this.updateScenario();
+                }
+            });
+
+            // 4. Atmospheric Transmissivity (Cyan)
+            this.sliders.transmissivity = new CompactLinearSlider({
+                containerId: "slider-transmissivity",
+                label: "Atmospheric Transmissivity (τ)",
+                icon: "🌫️",
+                min: 0.30,
+                max: 1.00,
+                step: 0.02,
+                value: this.state.transmissivity,
+                unit: "τ",
+                variant: "cyan",
+                formatFn: (v) => v.toFixed(2),
+                onChange: (val) => {
+                    this.state.transmissivity = val;
+                    this.updateScenario();
+                }
+            });
+
+            // 5. TNT Yield Equivalence Factor (Purple)
+            this.sliders.tntYield = new CompactLinearSlider({
+                containerId: "slider-tnt-yield",
+                label: "TNT Blast Yield Factor (η)",
+                icon: "💥",
+                min: 0.02,
+                max: 0.50,
+                step: 0.01,
+                value: this.state.tntYieldFactor,
+                unit: "η",
+                variant: "purple",
+                formatFn: (v) => (v * 100).toFixed(0) + "%",
+                onChange: (val) => {
+                    this.state.tntYieldFactor = val;
+                    this.updateScenario();
+                }
+            });
+
+            // 6. Wind Speed (Emerald / Cyan)
+            this.sliders.windSpeed = new CompactLinearSlider({
+                containerId: "slider-wind-speed",
+                label: "Ambient Wind Velocity",
+                icon: "💨",
+                min: 0.0,
+                max: 20.0,
+                step: 0.2,
+                value: this.state.windSpeed,
+                unit: "m/s",
+                variant: "emerald",
+                formatFn: (v) => `${v.toFixed(1)} m/s (${HM.getBeaufortDesc(v)})`,
+                onChange: (val) => {
+                    this.state.windSpeed = val;
+                    this.updateScenario();
+                }
+            });
+
+            // 7. Wind Direction (Polar Wheel Compass Scrubber)
+            this.sliders.windDirection = new CompactPolarCompassSlider({
+                containerId: "slider-wind-direction",
+                label: "Wind Direction (Blowing Towards)",
+                value: this.state.windDirection,
+                onChange: (deg) => {
+                    this.state.windDirection = deg;
+                    this.updateScenario();
+                }
+            });
+        }
+
+        bindGlobalEvents() {
+            // Preset Card Clicks
+            const presetCards = document.querySelectorAll(".preset-card");
+            presetCards.forEach(card => {
+                card.addEventListener("click", () => {
+                    const presetKey = card.getAttribute("data-preset");
+                    this.loadPreset(presetKey);
+                });
+            });
+
+            // Layer Filter Toggles
+            const toggleThermal = document.getElementById("toggle-layer-thermal");
+            const toggleBlast = document.getElementById("toggle-layer-blast");
+            const toggleWind = document.getElementById("toggle-layer-wind");
+
+            if (toggleThermal) {
+                toggleThermal.addEventListener("click", () => {
+                    this.state.layers.thermal = !this.state.layers.thermal;
+                    toggleThermal.classList.toggle("active", this.state.layers.thermal);
+                    this.updateScenario();
+                });
+            }
+
+            if (toggleBlast) {
+                toggleBlast.addEventListener("click", () => {
+                    this.state.layers.overpressure = !this.state.layers.overpressure;
+                    toggleBlast.classList.toggle("active", this.state.layers.overpressure);
+                    this.updateScenario();
+                });
+            }
+
+            if (toggleWind) {
+                toggleWind.addEventListener("click", () => {
+                    this.state.layers.windVector = !this.state.layers.windVector;
+                    toggleWind.classList.toggle("active", this.state.layers.windVector);
+                    this.updateScenario();
+                });
+            }
+
+            // Export GeoJSON
+            const btnExportGeo = document.getElementById("btn-export-geojson");
+            if (btnExportGeo) {
+                btnExportGeo.addEventListener("click", () => this.exportGeoJSON());
+            }
+
+            // Export Report / Print
+            const btnPrintReport = document.getElementById("btn-print-report");
+            if (btnPrintReport) {
+                btnPrintReport.addEventListener("click", () => window.print());
+            }
+
+            // Reset Epicenter Button
+            const btnResetCenter = document.getElementById("btn-recenter");
+            if (btnResetCenter) {
+                btnResetCenter.addEventListener("click", () => {
+                    this.map.flyTo([this.state.lat, this.state.lon], 14, { duration: 1.2 });
+                });
+            }
+
+            // Window resize handler for canvas and map
+            window.addEventListener("resize", () => {
+                if (this.map) this.map.invalidateSize();
+                this.renderDecayChart();
+            });
+        }
+
+        loadPreset(presetKey) {
+            if (!HM.PRESETS[presetKey]) return;
+            const p = HM.PRESETS[presetKey];
+            this.state.preset = presetKey;
+            this.state.lat = p.lat;
+            this.state.lon = p.lon;
+            this.state.fuelMassKg = p.fuelMassKg;
+            this.state.heatOfCombustion = p.heatOfCombustion;
+            this.state.tntYieldFactor = p.tntYieldFactor;
+            this.state.windSpeed = p.windSpeed;
+            this.state.windDirection = p.windDirection;
+            this.state.burnDuration = p.burnDuration;
+            this.state.transmissivity = p.transmissivity;
+
+            // Update Slider UI controls
+            this.sliders.fuelMass.setValue(p.fuelMassKg, false);
+            this.sliders.heatOfCombustion.setValue(p.heatOfCombustion, false);
+            this.sliders.burnDuration.setValue(p.burnDuration, false);
+            this.sliders.transmissivity.setValue(p.transmissivity, false);
+            this.sliders.tntYield.setValue(p.tntYieldFactor, false);
+            this.sliders.windSpeed.setValue(p.windSpeed, false);
+            this.sliders.windDirection.setValue(p.windDirection, false);
+
+            this.updatePresetButtons();
+            this.map.flyTo([this.state.lat, this.state.lon], 14, { duration: 1.2 });
+            this.updateScenario();
+        }
+
+        updatePresetButtons() {
+            document.querySelectorAll(".preset-card").forEach(card => {
+                const key = card.getAttribute("data-preset");
+                if (key === this.state.preset) {
+                    card.classList.add("active");
+                } else {
+                    card.classList.remove("active");
+                }
+            });
+        }
+
+        updateScenario(initialZoom = false) {
+            if (!this.map || !this.layersGroup) return;
+            this.layersGroup.clearLayers();
+
+            // 1. Calculate Base Radii
+            const thermalRadii = {};
+            for (const [key, band] of Object.entries(HM.THERMAL_BANDS)) {
+                thermalRadii[key] = HM.distanceForThermalThreshold(
+                    band.threshold, 
+                    this.state.fuelMassKg, 
+                    this.state.heatOfCombustion, 
+                    this.state.burnDuration, 
+                    this.state.transmissivity
+                );
+            }
+
+            const blastRadii = {};
+            for (const [key, band] of Object.entries(HM.OVERPRESSURE_BANDS)) {
+                blastRadii[key] = HM.distanceForOverpressureThreshold(
+                    band.threshold, 
+                    this.state.fuelMassKg, 
+                    this.state.heatOfCombustion, 
+                    this.state.tntYieldFactor
+                );
+            }
+
+            this.computedData = {
+                thermal: {},
+                blast: {},
+                thermalRadii,
+                blastRadii
+            };
+
+            // 2. Render Overpressure Zones (Largest to Smallest)
+            if (this.state.layers.overpressure) {
+                const blastOrder = ["minor_damage", "partial_collapse", "severe_damage"];
+                blastOrder.forEach(bandKey => {
+                    const band = HM.OVERPRESSURE_BANDS[bandKey];
+                    const r = blastRadii[bandKey];
+                    const polyCoords = HM.generateWindSkewedZone(
+                        this.state.lat, this.state.lon, r,
+                        this.state.windDirection, this.state.windSpeed,
+                        this.state.elongationFactor
+                    );
+                    
+                    const area = HM.calculatePolygonAreaKm2(polyCoords, this.state.lat);
+                    this.computedData.blast[bandKey] = { radius: r, area, polyCoords };
+
+                    const polygon = L.polygon(polyCoords, {
+                        color: band.color,
+                        weight: 2,
+                        opacity: 0.85,
+                        fillColor: band.color,
+                        fillOpacity: band.fillOpacity,
+                        dashArray: '4, 4'
+                    }).addTo(this.layersGroup);
+
+                    polygon.bindPopup(`
+                        <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; padding: 4px; color: #1D1D1F;">
+                            <h4 style="margin: 0 0 4px; color: ${band.color}; font-size: 14px; font-weight: 700;">💥 ${band.name}</h4>
+                            <p style="margin: 0 0 6px; font-size: 12px; color: #6E6E73;">${band.desc}</p>
+                            <div style="font-size: 11px; background: #F2F2F7; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06);">
+                                <div>Nominal Radius: <strong>${r.toFixed(1)} m</strong></div>
+                                <div>Impact Footprint: <strong>${area.toFixed(3)} km²</strong></div>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+
+            // 3. Render Thermal Zones (Largest to Smallest)
+            if (this.state.layers.thermal) {
+                const thermalOrder = ["pain_threshold", "injury_serious", "fatality_high"];
+                thermalOrder.forEach(bandKey => {
+                    const band = HM.THERMAL_BANDS[bandKey];
+                    const r = thermalRadii[bandKey];
+                    const polyCoords = HM.generateWindSkewedZone(
+                        this.state.lat, this.state.lon, r,
+                        this.state.windDirection, this.state.windSpeed,
+                        this.state.elongationFactor
+                    );
+                    
+                    const area = HM.calculatePolygonAreaKm2(polyCoords, this.state.lat);
+                    this.computedData.thermal[bandKey] = { radius: r, area, polyCoords };
+
+                    const polygon = L.polygon(polyCoords, {
+                        color: band.color,
+                        weight: 2,
+                        opacity: 0.95,
+                        fillColor: band.color,
+                        fillOpacity: band.fillOpacity
+                    }).addTo(this.layersGroup);
+
+                    polygon.bindPopup(`
+                        <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; padding: 4px; color: #1D1D1F;">
+                            <h4 style="margin: 0 0 4px; color: ${band.color}; font-size: 14px; font-weight: 700;">🔥 ${band.name}</h4>
+                            <p style="margin: 0 0 6px; font-size: 12px; color: #6E6E73;">${band.desc}</p>
+                            <div style="font-size: 11px; background: #F2F2F7; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06);">
+                                <div>Thermal Flux Limit: <strong>${band.threshold} kW/m²</strong></div>
+                                <div>Nominal Radius: <strong>${r.toFixed(1)} m</strong></div>
+                                <div>Plume Area: <strong>${area.toFixed(3)} km²</strong></div>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+
+            // 4. Render Epicenter Pulse Marker
+            const pulseIcon = L.divIcon({
+                className: 'pulse-marker-wrapper',
+                html: `<div class="pulse-beacon"></div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            this.epicenterMarker = L.marker([this.state.lat, this.state.lon], { icon: pulseIcon }).addTo(this.layersGroup);
+            this.epicenterMarker.bindTooltip(`<strong>Release Epicenter</strong><br>${this.state.lat.toFixed(4)}° N, ${this.state.lon.toFixed(4)}° E`, {
+                direction: 'top',
+                offset: [0, -10]
+            });
+
+            // 5. Render Wind Vector Arrow
+            if (this.state.layers.windVector && this.state.windSpeed > 0) {
+                const windRad = (this.state.windDirection * Math.PI) / 180.0;
+                const maxR = Math.max(thermalRadii.pain_threshold || 100, blastRadii.minor_damage || 100);
+                const arrowLenM = maxR * 1.25;
+                
+                const dx = arrowLenM * Math.sin(windRad);
+                const dy = arrowLenM * Math.cos(windRad);
+                const endLat = this.state.lat + dy / 111320.0;
+                const endLon = this.state.lon + dx / (111320.0 * Math.cos((this.state.lat * Math.PI) / 180.0));
+
+                const arrowLine = L.polyline([[this.state.lat, this.state.lon], [endLat, endLon]], {
+                    color: '#0071E3',
+                    weight: 2.5,
+                    opacity: 0.85,
+                    dashArray: '6, 6'
+                }).addTo(this.layersGroup);
+
+                arrowLine.bindTooltip(`Wind: ${this.state.windSpeed.toFixed(1)} m/s towards ${this.state.windDirection}° (${HM.getCardinalDirection(this.state.windDirection)})`, {
+                    sticky: true
+                });
+            }
+
+            // Update HUD Overlays & KPIs
+            this.updateHUDandKPIs(thermalRadii, blastRadii);
+            this.renderDecayChart();
+        }
+
+        updateHUDandKPIs(thermalRadii, blastRadii) {
+            // Map HUD Chips
+            const hudCoords = document.getElementById("hud-coords");
+            const hudWind = document.getElementById("hud-wind-summary");
+            if (hudCoords) hudCoords.textContent = `${this.state.lat.toFixed(4)}°N, ${this.state.lon.toFixed(4)}°E`;
+            if (hudWind) hudWind.textContent = `${this.state.windSpeed.toFixed(1)} m/s · ${this.state.windDirection}° ${HM.getCardinalDirection(this.state.windDirection)}`;
+
+            // Right KPIs
+            const fatalR = thermalRadii.fatality_high || 0;
+            const severeBlastR = blastRadii.severe_damage || 0;
+            const maxPerimeterR = Math.max(thermalRadii.pain_threshold || 0, blastRadii.minor_damage || 0);
+            const maxDownwindM = maxPerimeterR * (1.0 + (this.state.elongationFactor * this.state.windSpeed));
+            
+            const fatalEl = document.getElementById("kpi-fatal-radius");
+            const collapseEl = document.getElementById("kpi-collapse-radius");
+            const areaEl = document.getElementById("kpi-total-area");
+            const downwindEl = document.getElementById("kpi-downwind-reach");
+
+            if (fatalEl) fatalEl.textContent = fatalR.toFixed(0);
+            if (collapseEl) collapseEl.textContent = severeBlastR.toFixed(0);
+            if (downwindEl) downwindEl.textContent = maxDownwindM.toFixed(0);
+            
+            if (areaEl) {
+                const maxArea = Math.max(
+                    (this.computedData.thermal.pain_threshold && this.computedData.thermal.pain_threshold.area) || 0,
+                    (this.computedData.blast.minor_damage && this.computedData.blast.minor_damage.area) || 0
+                );
+                areaEl.textContent = maxArea.toFixed(2);
+            }
+
+            // Emergency Recommendations
+            const recoIso = document.getElementById("reco-isolation-dist");
+            const recoDownwind = document.getElementById("reco-downwind-dist");
+            if (recoIso) recoIso.textContent = `${Math.ceil(maxPerimeterR * 1.15)} meters`;
+            if (recoDownwind) recoDownwind.textContent = `${Math.ceil(maxDownwindM * 1.25)} meters downwind`;
+        }
+
+        renderDecayChart() {
+            const canvas = document.getElementById("decay-chart-canvas");
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext("2d");
+            const width = canvas.clientWidth || 300;
+            const height = canvas.clientHeight || 180;
+            
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, width, height);
+
+            const padding = { left: 45, right: 20, top: 15, bottom: 25 };
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            const maxDist = Math.max(100, Math.ceil((this.computedData.thermalRadii.pain_threshold || 100) * 1.4));
+            const maxFlux = 50.0;
+
+            // Draw grid
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.lineWidth = 1;
+            
+            // X Grid lines
+            for (let d = 0; d <= maxDist; d += Math.round(maxDist / 4)) {
+                const x = padding.left + (d / maxDist) * chartW;
+                ctx.beginPath();
+                ctx.moveTo(x, padding.top);
+                ctx.lineTo(x, padding.top + chartH);
+                ctx.stroke();
+
+                ctx.fillStyle = "#64748b";
+                ctx.font = "9px 'JetBrains Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillText(`${d}m`, x, padding.top + chartH + 15);
+            }
+
+            // Y Grid lines
+            for (let q = 0; q <= maxFlux; q += 12.5) {
+                const y = padding.top + chartH - (q / maxFlux) * chartH;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + chartW, y);
+                ctx.stroke();
+
+                ctx.fillStyle = "#64748b";
+                ctx.font = "9px 'JetBrains Mono', monospace";
+                ctx.textAlign = "right";
+                ctx.fillText(`${q.toFixed(0)}`, padding.left - 6, y + 3);
+            }
+
+            // Threshold lines
+            const y37 = padding.top + chartH - (37.5 / maxFlux) * chartH;
+            ctx.strokeStyle = "rgba(244, 63, 94, 0.4)";
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y37);
+            ctx.lineTo(padding.left + chartW, y37);
+            ctx.stroke();
+
+            const y12 = padding.top + chartH - (12.5 / maxFlux) * chartH;
+            ctx.strokeStyle = "rgba(249, 115, 22, 0.4)";
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y12);
+            ctx.lineTo(padding.left + chartW, y12);
+            ctx.stroke();
+
+            const y4 = padding.top + chartH - (4.0 / maxFlux) * chartH;
+            ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y4);
+            ctx.lineTo(padding.left + chartW, y4);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Area Gradient Fill
+            ctx.beginPath();
+            let startPoint = null;
+            const stepM = maxDist / 60;
+            for (let d = 5; d <= maxDist; d += stepM) {
+                const q = HM.calculateThermalRadiation(
+                    d, 
+                    this.state.fuelMassKg, 
+                    this.state.heatOfCombustion, 
+                    this.state.burnDuration, 
+                    this.state.transmissivity
+                );
+                const clampedQ = Math.min(maxFlux, q);
+                const x = padding.left + (d / maxDist) * chartW;
+                const y = padding.top + chartH - (clampedQ / maxFlux) * chartH;
+
+                if (!startPoint) {
+                    startPoint = { x, y };
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            if (startPoint) {
+                const lastX = padding.left + chartW;
+                ctx.lineTo(lastX, padding.top + chartH);
+                ctx.lineTo(startPoint.x, padding.top + chartH);
+                ctx.closePath();
+                const grad = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+                grad.addColorStop(0, "rgba(0, 240, 255, 0.2)");
+                grad.addColorStop(1, "rgba(0, 240, 255, 0.0)");
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+
+            // Draw Glowing Cyan Curve Stroke
+            ctx.beginPath();
+            ctx.strokeStyle = "#00f0ff";
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = "#00f0ff";
+            ctx.shadowBlur = 8;
+
+            let started = false;
+            for (let d = 5; d <= maxDist; d += stepM) {
+                const q = HM.calculateThermalRadiation(
+                    d, 
+                    this.state.fuelMassKg, 
+                    this.state.heatOfCombustion, 
+                    this.state.burnDuration, 
+                    this.state.transmissivity
+                );
+                const clampedQ = Math.min(maxFlux, q);
+                const x = padding.left + (d / maxDist) * chartW;
+                const y = padding.top + chartH - (clampedQ / maxFlux) * chartH;
+
+                if (!started) {
+                    ctx.moveTo(x, y);
+                    started = true;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        exportGeoJSON() {
+            const features = [];
+            
+            if (this.computedData.thermal) {
+                for (const [key, data] of Object.entries(this.computedData.thermal)) {
+                    const band = HM.THERMAL_BANDS[key];
+                    const geoJsonCoords = data.polyCoords.map(pt => [pt[1], pt[0]]);
+                    geoJsonCoords.push(geoJsonCoords[0]);
+                    
+                    features.push({
+                        type: "Feature",
+                        properties: {
+                            hazard_type: "thermal_radiation",
+                            band: key,
+                            name: band.name,
+                            threshold_kW_m2: band.threshold,
+                            nominal_radius_m: data.radius,
+                            area_km2: data.area,
+                            color: band.color
+                        },
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: [geoJsonCoords]
+                        }
+                    });
+                }
+            }
+
+            if (this.computedData.blast) {
+                for (const [key, data] of Object.entries(this.computedData.blast)) {
+                    const band = HM.OVERPRESSURE_BANDS[key];
+                    const geoJsonCoords = data.polyCoords.map(pt => [pt[1], pt[0]]);
+                    geoJsonCoords.push(geoJsonCoords[0]);
+                    
+                    features.push({
+                        type: "Feature",
+                        properties: {
+                            hazard_type: "blast_overpressure",
+                            band: key,
+                            name: band.name,
+                            threshold_psi: band.threshold,
+                            nominal_radius_m: data.radius,
+                            area_km2: data.area,
+                            color: band.color
+                        },
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: [geoJsonCoords]
+                        }
+                    });
+                }
+            }
+
+            features.push({
+                type: "Feature",
+                properties: {
+                    name: "Release Epicenter",
+                    fuelMassKg: this.state.fuelMassKg,
+                    windSpeedMs: this.state.windSpeed,
+                    windDirectionDeg: this.state.windDirection
+                },
+                geometry: {
+                    type: "Point",
+                    coordinates: [this.state.lon, this.state.lat]
+                }
+            });
+
+            const geojsonObj = {
+                type: "FeatureCollection",
+                metadata: {
+                    generator: "DER-02 Threat-Zone Estimation (Approach 2 CompactUI)",
+                    timestamp: new Date().toISOString(),
+                    scenario: this.state
+                },
+                features: features
+            };
+
+            const blob = new Blob([JSON.stringify(geojsonObj, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `threat_zone_contours_${Date.now()}.geojson`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+
+    // Auto-instantiate when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener("DOMContentLoaded", () => {
+            window.app = new ThreatZoneApp();
+        });
+    } else {
+        window.app = new ThreatZoneApp();
+    }
+})();
+
+    </script>
+</body>
+
+</html>
