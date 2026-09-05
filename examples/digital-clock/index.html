@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Digital World Clock</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <h1>Digital World Clock</h1>
+
+    <section class="controls">
+      <label for="tz-select">Add timezone:</label>
+      <select id="tz-select"></select>
+      <button id="add-btn">Add</button>
+      <input id="tz-input" placeholder="Or type a timezone (e.g. Asia/Kolkata)" />
+    </section>
+
+    <section id="clocks" class="clocks" aria-live="polite"></section>
+
+    <footer>
+      <p>Times update every second. Uses browser Intl APIs to format times by timezone.</p>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
